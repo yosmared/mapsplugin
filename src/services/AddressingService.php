@@ -6,7 +6,8 @@ use lib\model\Database;
 class AddressingService{
 	
 	
-	public function index(){
+	public function index($id=null)
+	{
 			
 		require_once '../src/views/layout.php';
 
@@ -94,7 +95,7 @@ class AddressingService{
 		{
 			$ubication = pg_fetch_object($result);
 			
-			$data = array("id"=>$ubication->id,"address"=>$ubication->address,"latitude"=>$ubication->lat,"longitude"=>$ubication->lng);
+			$data = array("id"=>$ubication->id,"address"=>$ubication->address,"latitude"=>floatval($ubication->lat),"longitude"=>floatval($ubication->lng));
 			
 			echo $this->returnJson($data);
 		

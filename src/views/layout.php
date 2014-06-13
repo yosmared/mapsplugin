@@ -1,40 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
- <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-    <meta charset="utf-8">
-    <title>Map plugin</title>
-    <!-- Bootstrap -->
-    <link href="<?php echo 'http://'.$_SERVER['HTTP_HOST'].dirname($_SERVER['SCRIPT_NAME']).'/assets/css/bootstrap.min.css';?>" rel="stylesheet">
-        <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="<?php echo "http://".$_SERVER['HTTP_HOST'].dirname($_SERVER['SCRIPT_NAME']).'/assets/js/jquery-1.11.1.min.js';?>" > </script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="<?php echo "http://".$_SERVER['HTTP_HOST'].dirname($_SERVER['SCRIPT_NAME']).'/assets/js/bootstrap.min.js'?>"></script>
-    <link type="text/css" rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500">
-     <style type="text/css">
+<head>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+<meta charset="utf-8">
+<title>Map plugin</title>
+<!-- Bootstrap -->
+<link
+	href="<?php echo 'http://'.$_SERVER['HTTP_HOST'].dirname($_SERVER['SCRIPT_NAME']).'/assets/css/bootstrap.min.css';?>"
+	rel="stylesheet">
+<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+<script
+	src="<?php echo "http://".$_SERVER['HTTP_HOST'].dirname($_SERVER['SCRIPT_NAME']).'/assets/js/jquery-1.11.1.min.js';?>"> </script>
+<!-- Include all compiled plugins (below), or include individual files as needed -->
+<script
+	src="<?php echo "http://".$_SERVER['HTTP_HOST'].dirname($_SERVER['SCRIPT_NAME']).'/assets/js/bootstrap.min.js'?>"></script>
+<link type="text/css" rel="stylesheet"
+	href="https://fonts.googleapis.com/css?family=Roboto:300,400,500">
+<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyB74CMqagqbs4PKInYeMk4S9GBya3mOWV8&sensor=false"></script>	
+	
+<style type="text/css">
+#maps_canvas {
+	height: 500px
+}
 
-      #maps_canvas { height: 500px }
-      #map_modal { height: 500px; z-index: 100;}
-	  .pac-container {
-	    background-color: #FFF;
-	    z-index: 20 !important;
-	    position: fixed;
-	    display: inline-block;
-	    float: left;
-	  }
-		.modal{
-		    z-index: 20;   
-		}
-		.modal-backdrop{
-		    z-index: 10;        
-		}​
-    </style>
-    
-    
+#map_modal {
+	height: 500px;
+	z-index: 100;
+}
 
-  <script type="text/javascript">
-  var placeSearch, autocomplete, map, mapModal,place, marker;
+.pac-container {
+	background-color: #FFF;
+	z-index: 20 !important;
+	position: fixed;
+	display: inline-block;
+	float: left;
+}
 
+.modal {
+	z-index: 20;
+}
+
+.modal-backdrop {
+	z-index: 10;
+}
+​
+</style>
+
+<script type="text/javascript">
+  var placeSearch, autocomplete, map, mapModal,place, marker,markerOriginal,myLatlng ;
+
+  var host='http://localhost/mapsplugin';
+  
  
   var componentForm = {
     //street_number: 'short_name',
@@ -50,7 +66,8 @@
 	  var mapOptions = {
 		        center: new google.maps.LatLng(6.668267,-66.578612),
 		        zoom: 6,
-		        mapTypeId: google.maps.MapTypeId.ROADMAP
+		        mapTypeId: google.maps.MapTypeId.ROADMAP,
+		        draggable:false
 		      };
 		map = new google.maps.Map(document.getElementById(mapid),
 		          mapOptions);
@@ -67,10 +84,10 @@
   	  var script = document.createElement("script");
   	  script.type = "text/javascript";
   	  script.src = "http://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyB74CMqagqbs4PKInYeMk4S9GBya3mOWV8&sensor=false&callback=initialize";
-  	  document.body.appendChild(script);
+  	  document.head.appendChild(script);
   	}
 
-  	window.onload = loadScript;
+  	//window.onload = loadScript;
 
   function initializeAuto() {
     // Create the autocomplete object, restricting the search
@@ -90,12 +107,11 @@
 			        zoom: 17,
 			        mapTypeId: google.maps.MapTypeId.ROADMAP
 			      };
-		mapModal = new google.maps.Map(document.getElementById('map_modal'),
+		 mapModal = new google.maps.Map(document.getElementById('map_modal'),
 			          mapOptions);
 	          
 	     marker = new google.maps.Marker({
-	  	    map: mapModal,
-	  	    //anchorPoint: new google.maps.Point(0, -29)
+	  	    map: mapModal, draggable:true
 	  	  });
 	    
 	      marker.setVisible(false);
@@ -126,7 +142,7 @@
   // [START region_fillform]
   function fillInAddress() {
     // Get the place details from the autocomplete object.
-    var place = autocomplete.getPlace();
+    place = autocomplete.getPlace();
 
     for (var component in componentForm) {
       document.getElementById(component).value = '';
@@ -158,13 +174,69 @@
       });
     }
   }
+
+function createMarker(mapa){
+	return  new google.maps.Marker({
+		      map: mapa,
+		  });
+	
+}
+  
   // [END region_geolocation]
 
     $(document).ready(function(){
 
+    	initialize();
+
+    	
+    	if($('#addressid').length>0 && $('#addressid').val()!="")
+        {
+    		
+     		var request =$.ajax({
+ 			  type: "GET",
+ 			  url: host+'/web/addressing/show/'+$('#addressid').val(),
+ 			  async: false,
+ 		  	  dataType:"json"
+ 			});
+
+     		request.done(function( msg ) {
+	     		 
+				marker = createMarker(map);
+	     		 
+	     		myLatlng = new google.maps.LatLng(msg.latitude,msg.longitude);
+	     			
+	         	marker.setPosition(myLatlng);
+	         	marker.setVisible(true);
+	
+	 			map.setCenter(myLatlng);
+	 			map.setZoom(17);
+
+	 			markerOriginal = marker;
+
+				//Setear
+				$("#autocomplete").val(msg.address);
+					  	
+ 			        	
+	         	var html='<p><a data-toggle="modal" id="openForm" class="btn btn-primary">Editar dirección</a></p>';	
+	     		$("#divBtn").html(html);
+     		  
+     		});
+     		 
+     		request.fail(function( jqXHR, textStatus ) {
+     			 var html='<p><a data-toggle="modal" id="openForm" class="btn btn-primary">Añadir dirección</a></p>';	
+        		  $("#divBtn").html(html);
+     		});
+
+       }else{
+       	    var html='<p><a data-toggle="modal" id="openForm" class="btn btn-primary">Añadir dirección</a></p>';	
+  		  	$("#divBtn").html(html);
+       	}
+
+
     	$('#openForm').click(function(){
     		$('#myModal').modal({show:true});
     		initializeAuto();
+    		
 
        	});
 
@@ -173,8 +245,26 @@
 	    		$('#myModal').modal('hide');
 	    		$('#modalMap').modal({show:true});
 	    		$('#modalMap').on('shown.bs.modal', function () {
-	        	    google.maps.event.trigger(mapModal, "resize");
-	        	    mapModal.setCenter(place.geometry.location);
+	        	    
+	        	    if($('#addressid').length>0 && $('#addressid').val()!=""&&place==null)
+	                {
+	        	    	var mapOptions = {zoom: 17,mapTypeId: google.maps.MapTypeId.ROADMAP};
+	        	    	mapModal = new google.maps.Map(document.getElementById('map_modal'),mapOptions);
+	      	          
+			      	    marker = new google.maps.Marker({map: mapModal, draggable:true }); 
+			      	  	marker.setVisible(true);
+			      	  	marker.setPosition(myLatlng);
+	        	    	
+		              	mapModal.setCenter(myLatlng);
+		              	mapModal.setZoom(17);
+		              	
+		              	google.maps.event.trigger(mapModal, "resize");
+	        	    	
+	        	    	
+	                }else{
+	                   google.maps.event.trigger(mapModal, "resize");
+	        	       mapModal.setCenter(marker.getPosition());
+	                }
 	        	});
         	}else{
         		$('#autocomplete').focus();
@@ -187,123 +277,148 @@
     	  $('#modalMap').modal('hide');
 
     	  $('#modalMap').on('hidden.bs.modal', function () {
+        	  markerOriginal.setMap(null);
         	  marker.setMap(map);
-    		  map.setCenter(place.geometry.location);
+        	  marker.setOptions({draggable:false});
+    		  
     		  map.setZoom(17);
+			  position=marker.getPosition();
+			  map.setCenter(position);
+			   
+			  if($('#addressid').length>0 && $('#addressid').val()!=""){
+ 
+	    		  $.ajax({
+	    			  type: "POST",
+	    			  url: host+'/web/addressing/save/'+$('#addressid').val(),
+	    			  data: { address: $('#autocomplete').val(), lat: position.lat(), lng:position.lng() },
+	    		  	  dataType:"json"
+	    			}).done(function( msg ) {
+	    			    console.log( "Dirección guardada exitosamente");
+	    			});				  
+
+			  }else{	
+
+	    		  $.ajax({
+	    			  type: "POST",
+	    			  url: host+'/web/addressing/save',
+	    			  data: { address: $('#autocomplete').val(), lat: position.lat(), lng:position.lng() },
+	    		  	  dataType:"json"
+	    			}).done(function( msg ) {
+	    				console.log( "Dirección guardada exitosamente");
+	    			});
+			  }
       	});
-    	  
-			
-      });
+		
+      });//end click btnEnd
+
+
 
     });
 
 </script>
 
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
+<!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+<!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
       <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
     <![endif]-->
-  </head>
-<body >
-   
-  <div class="container">
+</head>
+<body>
 
-	<div class="row clearfix">
-		<div class="col-md-4 column">
-			<h2>
-				Dirección
-			</h2>
-			<p>
-				Tu dirección exacta es privada y solo la compartiremos con los huéspedes que dispongan de reserva confirmada
-			</p>
+	<div class="container">
 
-		</div>
-		<div class="col-md-8 column">
-			<div class="jumbotron" id="maps_canvas">
-				
+		<div class="row clearfix">
+			<div class="col-md-4 column">
+				<h2>Dirección</h2>
+				<p>Tu dirección exacta es privada y solo la compartiremos con los
+					huéspedes que dispongan de reserva confirmada</p>
+
 			</div>
-		   	<div class="col-md-8 column">
-			
-			<p>
-				<a data-toggle="modal"  id="openForm" class="btn btn-primary">Añadir dirección</a>
-			</p>
-		</div>
+			<div class="col-md-8 column">
+				<div class="jumbotron" id="maps_canvas"></div>
+				<div class="col-md-8 column" id="divBtn">
+					<!--  <p><a data-toggle="modal" id="openForm" class="btn btn-primary">Añadir dirección</a></p>-->
+				</div>
+			</div>
 		</div>
 	</div>
-</div>
 
 
-<div class="modal"  id="myModal" >
-	<div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-          <h4 class="modal-title">Escribe tu dirección</h4>
-        </div>
-        <div class="modal-body">
-          <form role="form">
-		  
-		  <div class="form-group">
-		    <label for="autocomplete">Dirección</label>
-		    <input type="text" class="form-control" id="autocomplete" placeholder="Calle, Avenida + Nº Casa" onfocus="geolocate()" >
-		  </div>
-		  
-		  <div class="form-group">
-		    <label for="autocomplete">Calle</label>
-		    <input type="text" class="form-control" id="route" disabled="disabled">
-		  </div>
-		  
-		   <label for="country">País</label>
-		    <input class="form-control" id="country" type="text" disabled="disabled">
-		   
-		  <div class="form-group">
-		    <label for="locality">Ciudad / Población / Distrito </label>
-		    <input type="text" class="form-control" id="locality" disabled="disabled">
-		    
-		  </div>
-		  <div class="form-group">
-		    <label for="administrative_area_level_1">Estado / Provincia / Condado / Región</label>
-		    <input type="text" class="form-control" id="administrative_area_level_1" disabled="disabled">
-		    
-		  </div>
-		  <div class="form-group">
-		    <label for="postal_code">Código postal</label>
-		    <input type="text" class="form-control" id="postal_code" disabled="disabled">
-		    
-		  </div>
-		  
-		</form>
-        </div>
-        <div class="modal-footer">
-          <a href="#" data-dismiss="modal" class="btn">Cancelar</a>
-          <a data-toggle="modal" id="goMap" class="btn btn-primary">Siguiente</a>
-        </div>
-      </div>
-    </div>
-</div>
+	<div class="modal" id="myModal">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-hidden="true">×</button>
+					<h4 class="modal-title">Escribe tu dirección</h4>
+				</div>
+				<div class="modal-body">
+					<form role="form">
 
-<div class="modal fade" id="modalMap" >
-	<div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
-          <h4 class="modal-title">Marca la ubicación</h4>
-          <p>Desplázate en el mapa para marcar la ubicación exacta.</p>
-        </div>
-        <div class="modal-body">
-          <div  id="map_modal">
-          
-          </div>
-        </div>
-        <div class="modal-footer">
-          
-          <a href="#" id="btnEnd" class="btn btn-primary">Terminar</a>
-        </div>
-      </div>
-    </div>
-</div>
+						<div class="form-group">
+							<label for="autocomplete">Dirección</label> <input type="text"
+								class="form-control" id="autocomplete"
+								placeholder="Calle, Avenida + Nº Casa" onfocus="geolocate()">
+						</div>
 
+						<div class="form-group">
+							<label for="autocomplete">Calle</label> <input type="text"
+								class="form-control" id="route" disabled="disabled">
+						</div>
+
+						<label for="country">País</label> <input class="form-control"
+							id="country" type="text" disabled="disabled">
+
+						<div class="form-group">
+							<label for="locality">Ciudad / Población / Distrito </label> <input
+								type="text" class="form-control" id="locality"
+								disabled="disabled">
+
+						</div>
+						<div class="form-group">
+							<label for="administrative_area_level_1">Estado / Provincia /
+								Condado / Región</label> <input type="text" class="form-control"
+								id="administrative_area_level_1" disabled="disabled">
+
+						</div>
+						<div class="form-group">
+							<label for="postal_code">Código postal</label> <input type="text"
+								class="form-control" id="postal_code" disabled="disabled">
+
+						</div>
+
+					</form>
+				</div>
+				<div class="modal-footer">
+					<a href="#" data-dismiss="modal" class="btn">Cancelar</a> <a
+						data-toggle="modal" id="goMap" class="btn btn-primary">Siguiente</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="modal fade" id="modalMap">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal"
+						aria-hidden="true">×</button>
+					<h4 class="modal-title">Marca la ubicación</h4>
+					<p>Desplázate en el mapa para marcar la ubicación exacta.</p>
+				</div>
+				<div class="modal-body">
+					<div id="map_modal"></div>
+				</div>
+				<div class="modal-footer">
+
+					<a href="#" id="btnEnd" class="btn btn-primary">Terminar</a>
+				</div>
+			</div>
+		</div>
+	</div>
+<?php if($id!=null){?>
+<input type="hidden" value="<?php echo $id;?>" id="addressid" />
+<?php } ?>
   </body>
 </html>

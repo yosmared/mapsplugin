@@ -9,9 +9,10 @@ class FrontController implements ControllerInterface
     protected $controller    = self::DEFAULT_CONTROLLER;
     protected $action        = self::DEFAULT_ACTION;
     protected $params        = array();
-    protected $basePath      = "mapsplugin/web";
+    protected $basePath      = "";
      
     public function __construct(array $options = array()) {
+    	$this->basePath = substr(dirname($_SERVER['SCRIPT_NAME']), 1);
         if (empty($options)) {
            $this->parseUri();
    
@@ -37,7 +38,7 @@ class FrontController implements ControllerInterface
         } 
        if($path!=""){
         @list($controller, $action, $params) = explode("/", $path,3);
-       }//echo $path."<br>"; echo 'controller'.$controller."<br>"; echo 'action'.$action."<br>"; echo 'params'.$params."<br>"; die;
+       }
         if (isset($controller)) { 
         	
             $this->setController($controller);
