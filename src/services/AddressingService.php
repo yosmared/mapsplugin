@@ -24,7 +24,7 @@ class AddressingService{
 		$instance = Database::getInstance();
 		$dbconn = $instance->getConnection();
 		
-		if($id!=null){
+		if($id!=null){//UPDATE
 			
 			$query = "SELECT * FROM ubications WHERE id = $1";			
 			$prepare = pg_prepare($dbconn,'select', $query);			
@@ -57,7 +57,7 @@ class AddressingService{
 				echo $this->returnJson($data,"HTTP/1.0 404 Not Found");		
 			}
 				
-		}else{
+		}else{//INSERT
 
 			pg_query($dbconn,"BEGIN");
 					
@@ -73,8 +73,11 @@ class AddressingService{
 					
 			}else{
 				pg_query($dbconn,"COMMIT");
-				pg_free_result($result);
-				$data=array('response'=>'OK');
+				
+				$rs = pg_query($dbconn,"select last_value from ubications_id_seq");
+				$rso =pg_fetch_object($rs);
+				 
+				$data=array('response'=>'OK','id'=>$rso->last_value);
 				echo $this->returnJson($data);
 				
 			}

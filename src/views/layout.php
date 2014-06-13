@@ -216,8 +216,8 @@ function createMarker(mapa){
 				//Setear
 				$("#autocomplete").val(msg.address);
 					  	
- 			        	
-	         	var html='<p><a data-toggle="modal" id="openForm" class="btn btn-primary">Editar dirección</a></p>';	
+ 			    var direccion = "<p><h5><strong>"+msg.address+"</strong></h5></p><br/>";    	
+	         	var html=direccion+'<p><a data-toggle="modal" id="openForm" class="btn btn-primary">Editar dirección</a></p>';	
 	     		$("#divBtn").html(html);
      		  
      		});
@@ -277,7 +277,7 @@ function createMarker(mapa){
     	  $('#modalMap').modal('hide');
 
     	  $('#modalMap').on('hidden.bs.modal', function () {
-        	  markerOriginal.setMap(null);
+        	  
         	  marker.setMap(map);
         	  marker.setOptions({draggable:false});
     		  
@@ -286,7 +286,7 @@ function createMarker(mapa){
 			  map.setCenter(position);
 			   
 			  if($('#addressid').length>0 && $('#addressid').val()!=""){
- 
+				  markerOriginal.setMap(null);
 	    		  $.ajax({
 	    			  type: "POST",
 	    			  url: host+'/web/addressing/save/'+$('#addressid').val(),
@@ -304,6 +304,11 @@ function createMarker(mapa){
 	    			  data: { address: $('#autocomplete').val(), lat: position.lat(), lng:position.lng() },
 	    		  	  dataType:"json"
 	    			}).done(function( msg ) {
+	    				var direccion = "<p><h5><strong>"+$('#autocomplete').val()+"</strong></h5></p><br/>";    	
+	    	         	var html=direccion+'<p><a data-toggle="modal" id="openForm" class="btn btn-primary">Editar dirección</a></p>';	
+	    	     		$("#divBtn").html(html);
+	    	     		location.assign(host+'/web/addressing/index/'+msg.id);
+	    	     		//location.reload(false);
 	    				console.log( "Dirección guardada exitosamente");
 	    			});
 			  }
